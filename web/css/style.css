@@ -1,0 +1,353 @@
+:root {
+  --bg: #14161c;
+  --bg-elevated: #1c1f28;
+  --bg-card: #20232e;
+  --border: #2c303c;
+  --text: #e7e9ee;
+  --text-muted: #9aa0ae;
+  --accent: #5b8cff;
+  --accent-hover: #6f9aff;
+  --danger: #e5555f;
+  --danger-hover: #f16b74;
+  --ok: #3fbf7f;
+
+  --badge-added: #2f7d4f;
+  --badge-removed: #a04b2c;
+  --badge-completed: #2f6f8f;
+  --badge-changed: #8a6d1f;
+  --badge-reverted: #6a4fa0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.back-link {
+  color: var(--text);
+}
+
+.week-banner {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  flex: 1 1 auto;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0d12;
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #150a0a;
+  font-weight: 600;
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-hover);
+}
+
+.status-message {
+  min-height: 1.6rem;
+  padding: 0.4rem 1.5rem;
+  font-size: 0.9rem;
+}
+.status-message.status-ok {
+  color: var(--ok);
+}
+.status-message.status-error {
+  color: var(--danger-hover);
+}
+
+.filter-bar {
+  padding: 0.5rem 1.5rem;
+}
+
+.hidden-people-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.hidden-people-panel {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 20;
+}
+.hidden-people-panel.open {
+  display: block;
+}
+.hidden-people-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.hidden-people-item:hover {
+  background: var(--bg-elevated);
+}
+
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 0.5rem 1.5rem 2rem;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.person-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.person-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.person-order-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.order-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.order-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.person-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.issue-section h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin: 0.75rem 0 0.4rem;
+}
+
+.issue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.issue-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-elevated);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  min-width: 0;
+}
+.issue-item a {
+  overflow-wrap: anywhere;
+}
+
+.issue-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  list-style: none;
+  padding: 0.3rem 0.5rem;
+}
+
+.status-name {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.4rem;
+}
+
+.transition {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.badge {
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+.badge-added {
+  background: var(--badge-added);
+}
+.badge-removed-from-sprint {
+  background: var(--badge-removed);
+}
+.badge-completed {
+  background: var(--badge-completed);
+}
+.badge-status-changed {
+  background: var(--badge-changed);
+}
+.badge-reverted-to-original {
+  background: var(--badge-reverted);
+}
+
+.tag-carryover {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+}
+
+.person-detail {
+  padding: 1rem 1.5rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.timeline-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.timeline-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.88rem;
+  min-width: 0;
+}
+.timeline-item a {
+  overflow-wrap: anywhere;
+}
+
+.timeline-date {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+}
+
+.timeline-week {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .people-grid {
+    grid-template-columns: 1fr;
+    padding: 0.5rem 0.75rem 2rem;
+  }
+  .timeline-week {
+    margin-left: 0;
+  }
+}

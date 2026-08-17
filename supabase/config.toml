@@ -1,0 +1,10 @@
+project_id = "sprintanalise"
+
+[functions.discover-people]
+verify_jwt = true
+
+[functions.sync]
+verify_jwt = true
+
+[functions.start-week]
+verify_jwt = true

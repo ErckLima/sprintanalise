@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SprintAnalise</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>SprintAnalise</h1>
+    <div id="week-banner" class="week-banner">Carregando...</div>
+    <div class="topbar-actions">
+      <button id="sync-btn" class="btn btn-primary">Atualizar agora</button>
+      <button id="discover-btn" class="btn btn-secondary">Buscar pessoas</button>
+      <button id="start-week-btn" class="btn btn-danger">Iniciar a Semana</button>
+    </div>
+  </header>
+
+  <div id="status-message" class="status-message"></div>
+
+  <div class="filter-bar">
+    <div class="hidden-people-dropdown">
+      <button id="hidden-people-toggle" type="button" class="btn btn-secondary">
+        <span id="hidden-people-summary">Mostrar pessoas</span>
+      </button>
+      <div id="hidden-people-panel" class="hidden-people-panel">
+        <div id="hidden-people-list" class="hidden-people-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <main id="people-list" class="people-grid">
+    <p class="empty-state">Carregando...</p>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
