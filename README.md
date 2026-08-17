@@ -8,8 +8,8 @@ de "Iniciar a Semana".
 ## Estrutura
 
 - `supabase/migrations/0001_init.sql` — schema, RLS, RPC de reordenação.
-- `supabase/functions/` — Edge Functions (`discover-people`, `sync`, `start-week`)
-  e helpers compartilhados em `_shared/`.
+- `supabase/functions/` — Edge Functions (`discover-people`, `sync`, `start-week`,
+  `delete-last-week`) e helpers compartilhados em `_shared/`.
 - `web/` — front-end estático publicado no GitHub Pages (sem build step).
 
 ## Configuração necessária
@@ -32,7 +32,7 @@ Secrets da Edge Function (`supabase secrets set ...`):
 2. Se as tabelas não aparecerem no client JS, confirmar em Dashboard →
    Settings → API → Data API → Exposed schemas que `sprintanalise` está na
    lista (o migration já tenta configurar isso via `ALTER ROLE authenticator`).
-3. `supabase functions deploy discover-people sync start-week`.
+3. `supabase functions deploy discover-people sync start-week delete-last-week`.
 4. Configurar os secrets acima.
 5. Preencher `web/js/config.js` com a anon key do projeto.
 6. Push para `main` — o workflow `.github/workflows/deploy-pages.yml` publica

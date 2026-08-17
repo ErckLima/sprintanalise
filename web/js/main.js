@@ -19,6 +19,7 @@ function setHidden(set) {
 let state = {
   people: [],
   week: null,
+  latestWeek: null,
   currentStateByPerson: new Map(),
   baselineByIssue: new Map(),
   changedEventByIssue: new Map(),
@@ -29,6 +30,12 @@ async function loadData() {
   if (peopleErr) throw peopleErr;
 
   const { data: week } = await supabase.from("weeks").select("*").eq("is_current", true).maybeSingle();
+  const { data: latestWeekRows } = await supabase
+    .from("weeks")
+    .select("*")
+    .order("id", { ascending: false })
+    .limit(1);
+  const latestWeek = latestWeekRows?.[0] ?? null;
 
   const currentStateByPerson = new Map();
   const baselineByIssue = new Map();
@@ -56,13 +63,19 @@ async function loadData() {
     for (const ev of events ?? []) changedEventByIssue.set(ev.issue_id, ev);
   }
 
-  state = { people: people ?? [], week, currentStateByPerson, baselineByIssue, changedEventByIssue };
+  state = { people: people ?? [], week, latestWeek, currentStateByPerson, baselineByIssue, changedEventByIssue };
 }
 
 function render() {
   const hidden = getHidden();
   renderHiddenDropdown(hidden);
   renderWeekBanner();
+
+  const deleteBtn = document.getElementById("delete-week-btn");
+  deleteBtn.disabled = !state.latestWeek;
+  deleteBtn.textContent = state.latestWeek
+    ? `Excluir última semana (${state.latestWeek.label ?? state.latestWeek.start_date})`
+    : "Excluir última semana";
 
   const container = document.getElementById("people-list");
   container.innerHTML = "";
@@ -79,12 +92,16 @@ function render() {
     return;
   }
 
+  const orderedAll = [...state.people].filter((p) => p.active).sort((a, b) => a.display_order - b.display_order);
+  const total = orderedAll.length;
+
   for (const person of visiblePeople) {
-    container.appendChild(renderPersonCard(person));
+    const position = orderedAll.findIndex((p) => p.id === person.id) + 1;
+    container.appendChild(renderPersonCard(person, position, total));
   }
 }
 
-function renderPersonCard(person) {
+function renderPersonCard(person, position, total) {
   const rows = state.currentStateByPerson.get(person.id) ?? [];
   const changed = [];
   const unchanged = [];
@@ -102,10 +119,15 @@ function renderPersonCard(person) {
   card.className = "person-card";
   card.innerHTML = `
     <header class="person-card-header">
-      <div class="person-order-controls">
-        <button class="order-btn" data-action="up" data-id="${person.id}" title="Mover para cima">▲</button>
-        <button class="order-btn" data-action="down" data-id="${person.id}" title="Mover para baixo">▼</button>
-      </div>
+      <input
+        type="number"
+        class="order-input"
+        data-id="${person.id}"
+        value="${position}"
+        min="1"
+        max="${total}"
+        title="Posição na ordem de apresentação"
+      />
       <a class="person-name" href="person.html?id=${person.id}">${escapeHtml(person.display_name)}</a>
     </header>
     <section class="issue-section">
@@ -232,6 +254,21 @@ function setupEvents() {
     });
   });
 
+  document.getElementById("delete-week-btn").addEventListener("click", (e) => {
+    if (!state.latestWeek) return;
+    const password = prompt("Senha para excluir a última semana:");
+    if (!password) return;
+    const label = state.latestWeek.label ?? state.latestWeek.start_date;
+    if (!confirm(`Isso exclui PERMANENTEMENTE a semana "${label}" e todos os dados dela. Só é possível excluir a última semana gerada. Confirma?`)) return;
+    withButtonBusy(e.currentTarget, async () => {
+      const { data, error } = await supabase.functions.invoke("delete-last-week", { body: { password } });
+      if (error) return showStatus(`Erro ao excluir semana: ${error.message}`, true);
+      if (!data?.ok) return showStatus(`Erro ao excluir semana: ${data?.error}`, true);
+      showStatus(`Semana "${data.deleted_week.label}" excluída.`);
+      await refreshAndRender();
+    });
+  });
+
   document.getElementById("hidden-people-toggle").addEventListener("click", () => {
     document.getElementById("hidden-people-panel").classList.toggle("open");
   });
@@ -245,16 +282,24 @@ function setupEvents() {
     render();
   });
 
-  document.getElementById("people-list").addEventListener("click", async (e) => {
-    const btn = e.target.closest(".order-btn");
-    if (!btn) return;
-    const id = Number(btn.dataset.id);
-    const direction = btn.dataset.action;
-    const ordered = [...state.people].sort((a, b) => a.display_order - b.display_order);
-    const idx = ordered.findIndex((p) => p.id === id);
-    const swapWith = direction === "up" ? idx - 1 : idx + 1;
-    if (swapWith < 0 || swapWith >= ordered.length) return;
-    [ordered[idx], ordered[swapWith]] = [ordered[swapWith], ordered[idx]];
+  document.getElementById("people-list").addEventListener("change", async (e) => {
+    const input = e.target.closest(".order-input");
+    if (!input) return;
+    const id = Number(input.dataset.id);
+    const ordered = [...state.people].filter((p) => p.active).sort((a, b) => a.display_order - b.display_order);
+    const fromIdx = ordered.findIndex((p) => p.id === id);
+    if (fromIdx === -1) return;
+
+    let toIdx = Math.round(Number(input.value)) - 1;
+    toIdx = Math.max(0, Math.min(ordered.length - 1, toIdx));
+    if (toIdx === fromIdx) {
+      input.value = fromIdx + 1;
+      return;
+    }
+
+    const [moved] = ordered.splice(fromIdx, 1);
+    ordered.splice(toIdx, 0, moved);
+
     const { error } = await supabase.rpc("reorder_people", { p_ids: ordered.map((p) => p.id) });
     if (error) return showStatus(`Erro ao reordenar: ${error.message}`, true);
     await refreshAndRender();

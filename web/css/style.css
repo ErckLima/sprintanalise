@@ -186,24 +186,28 @@ a:hover {
   margin-bottom: 0.75rem;
 }
 
-.person-order-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.order-btn {
-  background: transparent;
+.order-input {
+  width: 2.6rem;
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  color: var(--text-muted);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.65rem;
-  line-height: 1;
-  padding: 2px 4px;
-}
-.order-btn:hover {
   color: var(--text);
+  border-radius: 4px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+.order-input:focus {
+  outline: none;
   border-color: var(--accent);
+}
+/* Hide native spinner arrows -- typing the number is the interaction. */
+.order-input::-webkit-outer-spin-button,
+.order-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.order-input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .person-name {

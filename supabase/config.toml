@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.start-week]
 verify_jwt = true
+
+[functions.delete-last-week]
+verify_jwt = true
