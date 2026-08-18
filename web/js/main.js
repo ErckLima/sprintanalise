@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient.js";
-import { REDMINE_BASE_URL } from "./config.js";
-import { escapeHtml, eventBadgeClass, eventLabel } from "./format.js";
+import { escapeHtml } from "./format.js";
+import { groupIssuesForPerson, renderIssueSectionsHtml } from "./issueSections.js";
 
 const HIDDEN_KEY = "sprintanalise_hidden_people";
 
@@ -102,18 +102,12 @@ function render() {
 }
 
 function renderPersonCard(person, position, total) {
-  const rows = state.currentStateByPerson.get(person.id) ?? [];
-  const changed = [];
-  const unchanged = [];
-
-  for (const row of rows) {
-    const baseline = state.baselineByIssue.get(row.issue_id);
-    const event = state.changedEventByIssue.get(row.issue_id);
-    const isNew = !baseline;
-    const item = { row, baseline, event, isNew };
-    if (event || isNew) changed.push(item);
-    else unchanged.push(item);
-  }
+  const { changed, unchanged } = groupIssuesForPerson(
+    person.id,
+    state.currentStateByPerson,
+    state.baselineByIssue,
+    state.changedEventByIssue,
+  );
 
   const card = document.createElement("article");
   card.className = "person-card";
@@ -130,49 +124,9 @@ function renderPersonCard(person, position, total) {
       />
       <a class="person-name" href="person.html?id=${person.id}">${escapeHtml(person.display_name)}</a>
     </header>
-    <section class="issue-section">
-      <h3>Alteradas, novas ou removidas (${changed.length})</h3>
-      <ul class="issue-list">${changed.map(renderIssueItem).join("") || emptyIssueRow()}</ul>
-    </section>
-    <section class="issue-section">
-      <h3>Sem alteração (${unchanged.length})</h3>
-      <ul class="issue-list">${unchanged.map(renderIssueItem).join("") || emptyIssueRow()}</ul>
-    </section>
+    ${renderIssueSectionsHtml(changed, unchanged)}
   `;
   return card;
-}
-
-function emptyIssueRow() {
-  return `<li class="issue-empty">Nada por aqui.</li>`;
-}
-
-function renderIssueItem({ row, baseline, event }) {
-  const url = `${REDMINE_BASE_URL}/issues/${row.issue_id}`;
-  let badge = "";
-  let transition = "";
-
-  if (event) {
-    badge = `<span class="badge ${eventBadgeClass(event.event_type)}">${escapeHtml(eventLabel(event.event_type))}</span>`;
-    if (event.from_status && event.to_status) {
-      transition = `<span class="transition">${escapeHtml(event.from_status)} → ${escapeHtml(event.to_status)}</span>`;
-    }
-  } else if (!baseline) {
-    badge = `<span class="badge badge-added">Adicionada</span>`;
-  }
-
-  const carryoverTag = baseline?.is_carryover
-    ? '<span class="tag-carryover" title="Já vinha de sprints anteriores">retrabalho</span>'
-    : "";
-
-  return `
-    <li class="issue-item">
-      <a href="${url}" target="_blank" rel="noopener">#${row.issue_id} ${escapeHtml(row.subject ?? "")}</a>
-      <span class="status-name">${escapeHtml(row.status_name ?? "")}</span>
-      ${transition}
-      ${badge}
-      ${carryoverTag}
-    </li>
-  `;
 }
 
 function renderWeekBanner() {
@@ -220,7 +174,20 @@ async function refreshAndRender() {
   render();
 }
 
+function closeMenu() {
+  document.getElementById("menu-panel").classList.remove("open");
+}
+
 function setupEvents() {
+  document.getElementById("menu-toggle").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("menu-panel").classList.toggle("open");
+  });
+  document.addEventListener("click", (e) => {
+    const dropdown = document.getElementById("menu-toggle").closest(".menu-dropdown");
+    if (!dropdown.contains(e.target)) closeMenu();
+  });
+
   document.getElementById("sync-btn").addEventListener("click", (e) => {
     withButtonBusy(e.currentTarget, async () => {
       const { data, error } = await supabase.functions.invoke("sync", { body: {} });
@@ -232,6 +199,7 @@ function setupEvents() {
   });
 
   document.getElementById("discover-btn").addEventListener("click", (e) => {
+    closeMenu();
     withButtonBusy(e.currentTarget, async () => {
       const { data, error } = await supabase.functions.invoke("discover-people", { body: {} });
       if (error) return showStatus(`Erro ao buscar pessoas: ${error.message}`, true);
@@ -242,6 +210,7 @@ function setupEvents() {
   });
 
   document.getElementById("start-week-btn").addEventListener("click", (e) => {
+    closeMenu();
     const password = prompt("Senha para iniciar a semana:");
     if (!password) return;
     if (!confirm("Isso fecha a semana atual e captura uma nova baseline. Confirma?")) return;
@@ -255,6 +224,7 @@ function setupEvents() {
   });
 
   document.getElementById("delete-week-btn").addEventListener("click", (e) => {
+    closeMenu();
     if (!state.latestWeek) return;
     const password = prompt("Senha para excluir a última semana:");
     if (!password) return;

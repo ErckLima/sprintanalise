@@ -12,9 +12,15 @@
     <div id="week-banner" class="week-banner">Carregando...</div>
     <div class="topbar-actions">
       <button id="sync-btn" class="btn btn-primary">Atualizar agora</button>
-      <button id="discover-btn" class="btn btn-secondary">Buscar pessoas</button>
-      <button id="start-week-btn" class="btn btn-danger">Iniciar a Semana</button>
-      <button id="delete-week-btn" class="btn btn-danger" disabled>Excluir última semana</button>
+      <div class="menu-dropdown">
+        <button id="menu-toggle" type="button" class="btn btn-secondary">Menu ▾</button>
+        <div id="menu-panel" class="menu-panel">
+          <a class="menu-item" href="weeks.html">Resumo de semanas</a>
+          <button id="discover-btn" type="button" class="menu-item">Buscar pessoas</button>
+          <button id="start-week-btn" type="button" class="menu-item menu-item-danger">Iniciar a Semana</button>
+          <button id="delete-week-btn" type="button" class="menu-item menu-item-danger" disabled>Excluir última semana</button>
+        </div>
+      </div>
     </div>
   </header>
 
