@@ -207,8 +207,9 @@ a:hover {
 }
 
 .menu-section {
+  position: relative;
   margin-top: 0.3rem;
-  padding-top: 0.4rem;
+  padding-top: 1.1rem;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -216,11 +217,13 @@ a:hover {
 }
 
 .menu-section-label {
-  font-size: 0.7rem;
+  position: absolute;
+  top: 0.4rem;
+  right: 0.6rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  padding: 0.1rem 0.6rem 0.3rem;
+  letter-spacing: 0.03em;
+  color: #6b7280;
 }
 
 .people-grid {
