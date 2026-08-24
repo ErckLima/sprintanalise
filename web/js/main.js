@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { escapeHtml } from "./format.js";
 import { groupIssuesForPerson, renderIssueSectionsHtml } from "./issueSections.js";
-import { computeNextMonthS1, computeWeekLabel } from "./weekLabel.js";
+import { computeWeekLabel, generateWeekLabelOptions } from "./weekLabel.js";
 
 const HIDDEN_KEY = "sprintanalise_hidden_people";
 
@@ -179,6 +179,22 @@ function closeMenu() {
   document.getElementById("menu-panel").classList.remove("open");
 }
 
+function openStartWeekModal() {
+  const today = new Date();
+  const defaultLabel = computeWeekLabel(today);
+  const select = document.getElementById("start-week-select");
+  select.innerHTML = generateWeekLabelOptions(today)
+    .map((label) => `<option value="${label}" ${label === defaultLabel ? "selected" : ""}>${label}</option>`)
+    .join("");
+  document.getElementById("start-week-password-input").value = "";
+  document.getElementById("start-week-modal").classList.add("open");
+  document.getElementById("start-week-password-input").focus();
+}
+
+function closeStartWeekModal() {
+  document.getElementById("start-week-modal").classList.remove("open");
+}
+
 function setupEvents() {
   document.getElementById("menu-toggle").addEventListener("click", (e) => {
     e.stopPropagation();
@@ -210,26 +226,32 @@ function setupEvents() {
     });
   });
 
-  document.getElementById("start-week-btn").addEventListener("click", (e) => {
+  document.getElementById("start-week-btn").addEventListener("click", () => {
     closeMenu();
-    const today = new Date();
-    const autoLabel = computeWeekLabel(today);
-    const nextMonthLabel = computeNextMonthS1(today);
-    const weekLabel = prompt(
-      `Qual sprint (semana) é essa? Isso decide quais demandas entram na sprint.\n\n` +
-        `Sugestão com base em hoje: ${autoLabel}\n` +
-        `Se for pular a S5 e já ir pro próximo mês: ${nextMonthLabel}\n\n` +
-        `Confirme ou edite (formato AA-MM SN):`,
-      autoLabel,
-    );
+    openStartWeekModal();
+  });
+
+  document.getElementById("start-week-cancel").addEventListener("click", () => {
+    closeStartWeekModal();
+  });
+
+  document.getElementById("start-week-modal").addEventListener("click", (e) => {
+    if (e.target.id === "start-week-modal") closeStartWeekModal();
+  });
+
+  document.getElementById("start-week-confirm").addEventListener("click", (e) => {
+    const weekLabel = document.getElementById("start-week-select").value;
+    const password = document.getElementById("start-week-password-input").value;
     if (!weekLabel) return;
-    const password = prompt("Senha para iniciar a semana:");
-    if (!password) return;
-    if (!confirm(`Isso fecha a semana atual e captura uma nova baseline para "${weekLabel}". Confirma?`)) return;
+    if (!password) {
+      showStatus("Informe a senha para iniciar a semana.", true);
+      return;
+    }
     withButtonBusy(e.currentTarget, async () => {
       const { data, error } = await supabase.functions.invoke("start-week", { body: { password, weekLabel } });
       if (error) return showStatus(`Erro ao iniciar semana: ${error.message}`, true);
       if (!data?.ok) return showStatus(`Erro ao iniciar semana: ${data?.error}`, true);
+      closeStartWeekModal();
       showStatus(`Semana "${data.week.label}" iniciada: ${data.issues_seen} issue(s) capturada(s).`);
       await refreshAndRender();
     });

@@ -44,6 +44,29 @@
     <p class="empty-state">Carregando...</p>
   </main>
 
+  <div id="start-week-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Iniciar a Semana</h3>
+      <p class="modal-hint">
+        Isso fecha a semana atual e captura uma nova baseline. Só demandas da
+        sprint escolhida (ou de sprints anteriores) entram — as futuras ficam
+        de fora até chegar a vez delas.
+      </p>
+      <label class="modal-field">
+        <span>Qual sprint é essa semana?</span>
+        <select id="start-week-select"></select>
+      </label>
+      <label class="modal-field">
+        <span>Senha</span>
+        <input id="start-week-password-input" type="password" autocomplete="off" />
+      </label>
+      <div class="modal-actions">
+        <button id="start-week-cancel" type="button" class="btn btn-secondary">Cancelar</button>
+        <button id="start-week-confirm" type="button" class="btn btn-danger">Iniciar semana</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
