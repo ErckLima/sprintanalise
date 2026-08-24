@@ -4,8 +4,12 @@ import { fetchSprintIssues, type RedmineConfig } from "./redmine.ts";
 // Roster is always discovered from Redmine (unique assigned_to across the
 // sprint filter, no assigned_to_id) — never a hardcoded list. Existing people
 // are never deactivated automatically, only upserted/renamed.
-export async function discoverAndUpsertPeople(db: SupabaseClient, cfg: RedmineConfig): Promise<any[]> {
-  const issues = await fetchSprintIssues(cfg);
+export async function discoverAndUpsertPeople(
+  db: SupabaseClient,
+  cfg: RedmineConfig,
+  currentWeekKey: number,
+): Promise<any[]> {
+  const issues = await fetchSprintIssues(cfg, currentWeekKey);
   const peopleFromRedmine = new Map<number, string>();
   for (const issue of issues) {
     if (issue.assigned_to) peopleFromRedmine.set(issue.assigned_to.id, issue.assigned_to.name);

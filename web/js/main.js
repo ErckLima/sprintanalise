@@ -1,6 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { escapeHtml } from "./format.js";
 import { groupIssuesForPerson, renderIssueSectionsHtml } from "./issueSections.js";
+import { computeNextMonthS1, computeWeekLabel } from "./weekLabel.js";
 
 const HIDDEN_KEY = "sprintanalise_hidden_people";
 
@@ -211,14 +212,25 @@ function setupEvents() {
 
   document.getElementById("start-week-btn").addEventListener("click", (e) => {
     closeMenu();
+    const today = new Date();
+    const autoLabel = computeWeekLabel(today);
+    const nextMonthLabel = computeNextMonthS1(today);
+    const weekLabel = prompt(
+      `Qual sprint (semana) é essa? Isso decide quais demandas entram na sprint.\n\n` +
+        `Sugestão com base em hoje: ${autoLabel}\n` +
+        `Se for pular a S5 e já ir pro próximo mês: ${nextMonthLabel}\n\n` +
+        `Confirme ou edite (formato AA-MM SN):`,
+      autoLabel,
+    );
+    if (!weekLabel) return;
     const password = prompt("Senha para iniciar a semana:");
     if (!password) return;
-    if (!confirm("Isso fecha a semana atual e captura uma nova baseline. Confirma?")) return;
+    if (!confirm(`Isso fecha a semana atual e captura uma nova baseline para "${weekLabel}". Confirma?`)) return;
     withButtonBusy(e.currentTarget, async () => {
-      const { data, error } = await supabase.functions.invoke("start-week", { body: { password } });
+      const { data, error } = await supabase.functions.invoke("start-week", { body: { password, weekLabel } });
       if (error) return showStatus(`Erro ao iniciar semana: ${error.message}`, true);
       if (!data?.ok) return showStatus(`Erro ao iniciar semana: ${data?.error}`, true);
-      showStatus(`Semana iniciada: ${data.issues_seen} issue(s) capturada(s).`);
+      showStatus(`Semana "${data.week.label}" iniciada: ${data.issues_seen} issue(s) capturada(s).`);
       await refreshAndRender();
     });
   });

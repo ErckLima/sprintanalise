@@ -5,13 +5,13 @@ import { learnCustomFieldDefs, refreshIssueStatuses } from "../_shared/caches.ts
 import { touchIssueHistory } from "../_shared/history.ts";
 import { discoverAndUpsertPeople } from "../_shared/roster.ts";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
-import { computeWeekLabel } from "../_shared/weekLabel.ts";
+import { computeWeekLabel, parseWeekLabel } from "../_shared/weekLabel.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
 
-  let body: { password?: string };
+  let body: { password?: string; weekLabel?: string };
   try {
     body = await req.json();
   } catch {
@@ -23,13 +23,20 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Senha inválida" }, 401);
   }
 
+  // The leader picks which sprint week this is (S5 is often skipped in
+  // favor of next month's S1) -- computeWeekLabel(today) is only a fallback
+  // for callers that don't send one.
+  const requestedLabel = typeof body.weekLabel === "string" ? body.weekLabel.trim() : "";
+  const weekLabel = parseWeekLabel(requestedLabel) !== null ? requestedLabel : computeWeekLabel(new Date());
+  const currentWeekKey = parseWeekLabel(weekLabel)!;
+
   const db = supabaseAdmin();
   const startedAt = new Date().toISOString();
 
   try {
     const cfg = loadRedmineConfig();
 
-    await discoverAndUpsertPeople(db, cfg);
+    await discoverAndUpsertPeople(db, cfg, currentWeekKey);
     const { data: activePeople, error: activeErr } = await db.from("people").select("*").eq("active", true);
     if (activeErr) throw activeErr;
 
@@ -40,7 +47,7 @@ Deno.serve(async (req) => {
     const { data: newWeek, error: weekErr } = await db
       .from("weeks")
       .insert({
-        label: computeWeekLabel(today),
+        label: weekLabel,
         start_date: today.toISOString().slice(0, 10),
         started_at: startedAt,
         is_current: true,
@@ -50,7 +57,7 @@ Deno.serve(async (req) => {
     if (weekErr) throw weekErr;
 
     const statusMap = await refreshIssueStatuses(db, cfg);
-    const issuesByPerson = await fetchIssuesForPeople(cfg, (activePeople ?? []).map((p: any) => p.redmine_user_id));
+    const issuesByPerson = await fetchIssuesForPeople(cfg, currentWeekKey, (activePeople ?? []).map((p: any) => p.redmine_user_id));
     const allIssues = Array.from(issuesByPerson.values()).flat();
     await learnCustomFieldDefs(db, allIssues);
 

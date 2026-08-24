@@ -358,6 +358,16 @@ a:hover {
   background: var(--badge-reverted);
 }
 
+.tag-sprint {
+  color: var(--accent-hover);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.05rem 0.4rem;
+}
+
 .tag-carryover {
   color: var(--text-muted);
   font-size: 0.72rem;

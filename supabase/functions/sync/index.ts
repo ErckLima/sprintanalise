@@ -3,6 +3,7 @@ import { fetchIssuesByIds, fetchIssuesForPeople, loadRedmineConfig, sprintCfValu
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { learnCustomFieldDefs, refreshIssueStatuses } from "../_shared/caches.ts";
 import { touchIssueHistory } from "../_shared/history.ts";
+import { computeWeekLabel, parseWeekLabel } from "../_shared/weekLabel.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -35,7 +36,12 @@ Deno.serve(async (req) => {
 
     const statusMap = await refreshIssueStatuses(db, cfg);
 
-    const issuesByPerson = await fetchIssuesForPeople(cfg, (people ?? []).map((p: any) => p.redmine_user_id));
+    // The active week's own label is the eligibility boundary -- not
+    // today's date -- so it stays consistent with whatever the leader chose
+    // when starting this week (e.g. skipping S5 straight to next month's S1).
+    const currentWeekKey = (week.label ? parseWeekLabel(week.label) : null) ?? parseWeekLabel(computeWeekLabel(new Date()))!;
+
+    const issuesByPerson = await fetchIssuesForPeople(cfg, currentWeekKey, (people ?? []).map((p: any) => p.redmine_user_id));
     const allFetchedIssues = Array.from(issuesByPerson.values()).flat();
     await learnCustomFieldDefs(db, allFetchedIssues);
 

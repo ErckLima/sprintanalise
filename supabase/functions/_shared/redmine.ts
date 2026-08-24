@@ -55,7 +55,11 @@ function sprintFilterParams(cfg: RedmineConfig, assignedToId?: number): Record<s
   return params;
 }
 
-export async function fetchSprintIssues(cfg: RedmineConfig, assignedToId?: number): Promise<RedmineIssue[]> {
+export async function fetchSprintIssues(
+  cfg: RedmineConfig,
+  currentWeekKey: number,
+  assignedToId?: number,
+): Promise<RedmineIssue[]> {
   const issues: RedmineIssue[] = [];
   const limit = 100;
   let offset = 0;
@@ -73,15 +77,16 @@ export async function fetchSprintIssues(cfg: RedmineConfig, assignedToId?: numbe
   // The Redmine filter only checks the sprint field is non-empty -- the
   // leader pre-fills future weeks too, so a demand only really counts once
   // its own week is current or already past.
-  return issues.filter((issue) => isEligibleForCurrentSprint(sprintCfValue(cfg, issue)));
+  return issues.filter((issue) => isEligibleForCurrentSprint(sprintCfValue(cfg, issue), currentWeekKey));
 }
 
 export async function fetchIssuesForPeople(
   cfg: RedmineConfig,
+  currentWeekKey: number,
   redmineUserIds: number[],
 ): Promise<Map<number, RedmineIssue[]>> {
   const entries = await Promise.all(
-    redmineUserIds.map(async (id) => [id, await fetchSprintIssues(cfg, id)] as const),
+    redmineUserIds.map(async (id) => [id, await fetchSprintIssues(cfg, currentWeekKey, id)] as const),
   );
   return new Map(entries);
 }

@@ -55,8 +55,13 @@ export function renderIssueItem({ row, baseline, event }) {
     ? '<span class="tag-carryover" title="Já vinha de sprints anteriores">retrabalho</span>'
     : "";
 
+  const sprintTag = row.sprint_cf_value
+    ? `<span class="tag-sprint" title="Sprint desta demanda">${escapeHtml(row.sprint_cf_value)}</span>`
+    : "";
+
   return `
     <li class="issue-item">
+      ${sprintTag}
       <a href="${url}" target="_blank" rel="noopener">#${row.issue_id} ${escapeHtml(row.subject ?? "")}</a>
       <span class="status-name">${escapeHtml(row.status_name ?? "")}</span>
       ${transition}
