@@ -5,6 +5,7 @@ import { learnCustomFieldDefs, refreshIssueStatuses } from "../_shared/caches.ts
 import { touchIssueHistory } from "../_shared/history.ts";
 import { discoverAndUpsertPeople } from "../_shared/roster.ts";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
+import { computeWeekLabel } from "../_shared/weekLabel.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
     const { data: newWeek, error: weekErr } = await db
       .from("weeks")
       .insert({
-        label: today.toLocaleDateString("pt-BR"),
+        label: computeWeekLabel(today),
         start_date: today.toISOString().slice(0, 10),
         started_at: startedAt,
         is_current: true,

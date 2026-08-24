@@ -1,3 +1,5 @@
+import { isEligibleForCurrentSprint } from "./weekLabel.ts";
+
 export interface RedmineConfig {
   baseUrl: string;
   apiKey: string;
@@ -68,7 +70,10 @@ export async function fetchSprintIssues(cfg: RedmineConfig, assignedToId?: numbe
     total = data.total_count ?? issues.length;
     offset += limit;
   }
-  return issues;
+  // The Redmine filter only checks the sprint field is non-empty -- the
+  // leader pre-fills future weeks too, so a demand only really counts once
+  // its own week is current or already past.
+  return issues.filter((issue) => isEligibleForCurrentSprint(sprintCfValue(cfg, issue)));
 }
 
 export async function fetchIssuesForPeople(
