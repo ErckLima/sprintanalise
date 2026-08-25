@@ -75,8 +75,11 @@ async function loadWeekDetail(week, peopleById, body) {
   const baselineByIssue = new Map();
   for (const row of baselineRows ?? []) baselineByIssue.set(row.issue_id, row);
 
-  const changedEventByIssue = new Map();
-  for (const ev of events ?? []) changedEventByIssue.set(ev.issue_id, ev);
+  const eventsByIssue = new Map();
+  for (const ev of events ?? []) {
+    if (!eventsByIssue.has(ev.issue_id)) eventsByIssue.set(ev.issue_id, new Map());
+    eventsByIssue.get(ev.issue_id).set(ev.event_type, ev);
+  }
 
   const personIds = Array.from(currentStateByPerson.keys()).sort((a, b) => {
     const orderA = peopleById.get(a)?.display_order ?? 0;
@@ -96,7 +99,7 @@ async function loadWeekDetail(week, peopleById, body) {
         personId,
         currentStateByPerson,
         baselineByIssue,
-        changedEventByIssue,
+        eventsByIssue,
       );
       return `
         <article class="person-card">

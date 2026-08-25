@@ -3,17 +3,23 @@ import { escapeHtml, eventBadgeClass, eventLabel } from "./format.js";
 
 // Shared between the dashboard (current week only) and the weeks overview
 // (any week) so both render issue lists the same way.
-export function groupIssuesForPerson(personId, currentStateByPerson, baselineByIssue, changedEventByIssue) {
+//
+// eventsByIssue is Map<issueId, Map<eventType, latestEventOfThatType>> --
+// an issue can legitimately rack up more than one distinct event type in the
+// same week (e.g. added mid-week, then its status changed), and each one
+// needs its own badge rather than the newest event hiding the others.
+export function groupIssuesForPerson(personId, currentStateByPerson, baselineByIssue, eventsByIssue) {
   const rows = currentStateByPerson.get(personId) ?? [];
   const changed = [];
   const unchanged = [];
 
   for (const row of rows) {
     const baseline = baselineByIssue.get(row.issue_id);
-    const event = changedEventByIssue.get(row.issue_id);
+    const eventsByType = eventsByIssue.get(row.issue_id);
     const isNew = !baseline;
-    const item = { row, baseline, event };
-    if (event || isNew) changed.push(item);
+    const hasEvents = eventsByType && eventsByType.size > 0;
+    const item = { row, baseline, eventsByType, isNew };
+    if (hasEvents || isNew) changed.push(item);
     else unchanged.push(item);
   }
 
@@ -37,18 +43,24 @@ function emptyIssueRow() {
   return `<li class="issue-empty">Nada por aqui.</li>`;
 }
 
-export function renderIssueItem({ row, baseline, event }) {
-  const url = `${REDMINE_BASE_URL}/issues/${row.issue_id}`;
-  let badge = "";
-  let transition = "";
+// Fixed order so badges read consistently regardless of which order the
+// events happened to fire in (e.g. always "Adicionada" before "Mudou status").
+const EVENT_TYPE_ORDER = ["added", "status_changed", "reverted_to_original", "completed", "removed_from_sprint"];
 
-  if (event) {
-    badge = `<span class="badge ${eventBadgeClass(event.event_type)}">${escapeHtml(eventLabel(event.event_type))}</span>`;
-    if (event.from_status && event.to_status) {
-      transition = `<span class="transition">${escapeHtml(event.from_status)} → ${escapeHtml(event.to_status)}</span>`;
+export function renderIssueItem({ row, baseline, eventsByType, isNew }) {
+  const url = `${REDMINE_BASE_URL}/issues/${row.issue_id}`;
+  const types = new Set(eventsByType ? eventsByType.keys() : []);
+  if (isNew) types.add("added"); // safety net if an "added" event is somehow missing
+
+  const badges = [];
+  const transitions = [];
+  for (const type of EVENT_TYPE_ORDER) {
+    if (!types.has(type)) continue;
+    badges.push(`<span class="badge ${eventBadgeClass(type)}">${escapeHtml(eventLabel(type))}</span>`);
+    const ev = eventsByType?.get(type);
+    if (ev?.from_status && ev?.to_status) {
+      transitions.push(`<span class="transition">${escapeHtml(ev.from_status)} → ${escapeHtml(ev.to_status)}</span>`);
     }
-  } else if (!baseline) {
-    badge = `<span class="badge badge-added">Adicionada</span>`;
   }
 
   const carryoverTag = baseline?.is_carryover
@@ -64,8 +76,8 @@ export function renderIssueItem({ row, baseline, event }) {
       ${sprintTag}
       <a href="${url}" target="_blank" rel="noopener">#${row.issue_id} ${escapeHtml(row.subject ?? "")}</a>
       <span class="status-name">${escapeHtml(row.status_name ?? "")}</span>
-      ${transition}
-      ${badge}
+      ${transitions.join("")}
+      ${badges.join("")}
       ${carryoverTag}
     </li>
   `;

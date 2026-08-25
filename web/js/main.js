@@ -23,7 +23,7 @@ let state = {
   latestWeek: null,
   currentStateByPerson: new Map(),
   baselineByIssue: new Map(),
-  changedEventByIssue: new Map(),
+  eventsByIssue: new Map(),
 };
 
 async function loadData() {
@@ -40,7 +40,7 @@ async function loadData() {
 
   const currentStateByPerson = new Map();
   const baselineByIssue = new Map();
-  const changedEventByIssue = new Map();
+  const eventsByIssue = new Map();
 
   if (week) {
     const { data: currentStates } = await supabase.from("issue_current_state").select("*").eq("week_id", week.id);
@@ -52,19 +52,23 @@ async function loadData() {
     const { data: baselineRows } = await supabase.from("week_baseline_issues").select("*").eq("week_id", week.id);
     for (const row of baselineRows ?? []) baselineByIssue.set(row.issue_id, row);
 
-    // Ascending order so the last write wins -> map ends up holding the most
-    // recent non-baseline event per issue (used both as "did it change" and
-    // as the badge/de-para source).
+    // Ascending order so the last write per (issue, event type) wins -> each
+    // issue keeps every distinct event type it had this week (e.g. added AND
+    // later status-changed both survive), each holding its most recent
+    // occurrence for the badge/de-para text.
     const { data: events } = await supabase
       .from("issue_events")
       .select("*")
       .eq("week_id", week.id)
       .neq("source", "week_start")
       .order("detected_at", { ascending: true });
-    for (const ev of events ?? []) changedEventByIssue.set(ev.issue_id, ev);
+    for (const ev of events ?? []) {
+      if (!eventsByIssue.has(ev.issue_id)) eventsByIssue.set(ev.issue_id, new Map());
+      eventsByIssue.get(ev.issue_id).set(ev.event_type, ev);
+    }
   }
 
-  state = { people: people ?? [], week, latestWeek, currentStateByPerson, baselineByIssue, changedEventByIssue };
+  state = { people: people ?? [], week, latestWeek, currentStateByPerson, baselineByIssue, eventsByIssue };
 }
 
 function render() {
@@ -107,7 +111,7 @@ function renderPersonCard(person, position, total) {
     person.id,
     state.currentStateByPerson,
     state.baselineByIssue,
-    state.changedEventByIssue,
+    state.eventsByIssue,
   );
 
   const card = document.createElement("article");
