@@ -40,8 +40,16 @@ Deno.serve(async (req) => {
     const { data: activePeople, error: activeErr } = await db.from("people").select("*").eq("active", true);
     if (activeErr) throw activeErr;
 
-    const { error: closeErr } = await db.from("weeks").update({ is_current: false }).eq("is_current", true);
+    // Captured before insert so we know exactly which week "transbordo" means
+    // relative to -- the one being closed right now, not just any past week.
+    const { data: closedWeek, error: closeErr } = await db
+      .from("weeks")
+      .update({ is_current: false })
+      .eq("is_current", true)
+      .select()
+      .maybeSingle();
     if (closeErr) throw closeErr;
+    const previousWeekId: number | null = closedWeek?.id ?? null;
 
     const today = new Date();
     const { data: newWeek, error: weekErr } = await db
@@ -62,7 +70,7 @@ Deno.serve(async (req) => {
     await learnCustomFieldDefs(db, allIssues);
 
     const allIssueIds = allIssues.map((i) => i.id);
-    const alreadyInHistory = await touchIssueHistory(db, newWeek.id, allIssueIds, true);
+    const previousLastSeenWeek = await touchIssueHistory(db, newWeek.id, allIssueIds, true);
 
     const now = new Date().toISOString();
     const baselineRows: any[] = [];
@@ -76,7 +84,7 @@ Deno.serve(async (req) => {
         issuesSeen++;
         const cfValue = sprintCfValue(cfg, issue);
         const isClosed = statusMap.get(issue.status.id)?.is_closed ?? false;
-        const isCarryover = alreadyInHistory.get(issue.id) ?? false;
+        const isCarryover = previousWeekId != null && previousLastSeenWeek.get(issue.id) === previousWeekId;
 
         baselineRows.push({
           week_id: newWeek.id,

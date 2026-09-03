@@ -64,7 +64,7 @@ export function renderIssueItem({ row, baseline, eventsByType, isNew }) {
   }
 
   const carryoverTag = baseline?.is_carryover
-    ? '<span class="tag-carryover" title="Já vinha de sprints anteriores">retrabalho</span>'
+    ? '<span class="tag-carryover" title="Também estava na sprint imediatamente anterior">transbordo</span>'
     : "";
 
   const sprintTag = row.sprint_cf_value

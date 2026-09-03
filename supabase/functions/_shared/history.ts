@@ -1,23 +1,27 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-// Returns, per issue_id, whether it already existed in issue_history *before*
-// this call — that's the carryover signal when called at baseline capture time.
+// Returns, per issue_id, whatever last_seen_week_id was *before* this call
+// (null if the issue has no history row yet). Callers doing baseline capture
+// use this to decide "transbordo": an issue only counts as carried over if
+// its last sighting was specifically the week being closed right now, not
+// merely "seen at some point in the past" -- an issue seen in week 1, absent
+// in week 2, and back in week 3 is not transbordo into week 3.
 export async function touchIssueHistory(
   db: SupabaseClient,
   weekId: number,
   issueIds: number[],
   isBaseline: boolean,
-): Promise<Map<number, boolean>> {
-  const alreadyKnown = new Map<number, boolean>();
-  if (issueIds.length === 0) return alreadyKnown;
+): Promise<Map<number, number | null>> {
+  const previousLastSeenWeek = new Map<number, number | null>();
+  if (issueIds.length === 0) return previousLastSeenWeek;
 
   const { data: existing, error } = await db
     .from("issue_history")
-    .select("issue_id, times_seen_as_baseline")
+    .select("issue_id, times_seen_as_baseline, last_seen_week_id")
     .in("issue_id", issueIds);
   if (error) throw error;
 
-  const existingMap = new Map((existing ?? []).map((h: any) => [h.issue_id, h.times_seen_as_baseline as number]));
+  const existingMap = new Map((existing ?? []).map((h: any) => [h.issue_id, h]));
   const now = new Date().toISOString();
 
   const newIds = issueIds.filter((id) => !existingMap.has(id));
@@ -44,7 +48,7 @@ export async function touchIssueHistory(
           db.from("issue_history").update({
             last_seen_week_id: weekId,
             last_seen_at: now,
-            times_seen_as_baseline: (existingMap.get(id) ?? 0) + 1,
+            times_seen_as_baseline: (existingMap.get(id)?.times_seen_as_baseline ?? 0) + 1,
           }).eq("issue_id", id)
         ),
       );
@@ -57,6 +61,8 @@ export async function touchIssueHistory(
     }
   }
 
-  for (const id of issueIds) alreadyKnown.set(id, existingMap.has(id));
-  return alreadyKnown;
+  for (const id of issueIds) {
+    previousLastSeenWeek.set(id, existingMap.get(id)?.last_seen_week_id ?? null);
+  }
+  return previousLastSeenWeek;
 }
