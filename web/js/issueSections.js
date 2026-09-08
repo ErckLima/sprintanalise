@@ -1,6 +1,16 @@
 import { REDMINE_BASE_URL } from "./config.js";
 import { escapeHtml, eventBadgeClass, eventLabel, priorityBadgeClass } from "./format.js";
 
+// Highest priority first; anything unrecognized sinks to the bottom instead
+// of erroring.
+const PRIORITY_RANK = { Imediata: 0, Urgente: 1, Alta: 2, Normal: 3, Baixa: 4 };
+function priorityRank(name) {
+  return PRIORITY_RANK[name] ?? 99;
+}
+function byPriority(a, b) {
+  return priorityRank(a.row.priority_name) - priorityRank(b.row.priority_name);
+}
+
 // Shared between the dashboard (current week only) and the weeks overview
 // (any week) so both render issue lists the same way.
 //
@@ -22,6 +32,9 @@ export function groupIssuesForPerson(personId, currentStateByPerson, baselineByI
     if (hasEvents || isNew) changed.push(item);
     else unchanged.push(item);
   }
+
+  changed.sort(byPriority);
+  unchanged.sort(byPriority);
 
   return { changed, unchanged };
 }
