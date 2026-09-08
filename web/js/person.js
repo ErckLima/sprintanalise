@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { REDMINE_BASE_URL } from "./config.js";
-import { escapeHtml, eventBadgeClass, eventLabel, formatDateTime } from "./format.js";
+import { escapeHtml, eventBadgeClass, eventLabel, formatDateTime, priorityBadgeClass } from "./format.js";
 
 const params = new URLSearchParams(location.search);
 const personId = params.get("id");
@@ -29,7 +29,7 @@ async function load() {
       .order("detected_at", { ascending: false }),
     supabase
       .from("issue_current_state")
-      .select("issue_id, subject, sprint_cf_value, last_polled_at")
+      .select("issue_id, subject, sprint_cf_value, priority_name, last_polled_at")
       .eq("person_id", personId),
   ]);
 
@@ -51,6 +51,9 @@ async function load() {
     const sprintTag = state?.sprint_cf_value
       ? `<span class="tag-sprint" title="Sprint desta demanda">${escapeHtml(state.sprint_cf_value)}</span>`
       : "";
+    const priorityTag = state?.priority_name
+      ? `<span class="badge ${priorityBadgeClass(state.priority_name)}" title="Prioridade">${escapeHtml(state.priority_name)}</span>`
+      : "";
     const transition = ev.from_status && ev.to_status
       ? `<span class="transition">${escapeHtml(ev.from_status)} → ${escapeHtml(ev.to_status)}</span>`
       : "";
@@ -58,6 +61,7 @@ async function load() {
     li.className = "timeline-item";
     li.innerHTML = `
       <span class="timeline-date">${formatDateTime(ev.detected_at)}</span>
+      ${priorityTag}
       ${sprintTag}
       <a href="${REDMINE_BASE_URL}/issues/${ev.issue_id}" target="_blank" rel="noopener">#${ev.issue_id} ${escapeHtml(subject)}</a>
       <span class="badge ${eventBadgeClass(ev.event_type)}">${escapeHtml(eventLabel(ev.event_type))}</span>

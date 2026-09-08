@@ -14,6 +14,21 @@ export function eventBadgeClass(eventType) {
   return `badge-${String(eventType).replace(/_/g, "-")}`;
 }
 
+// Redmine's priority field, in order: Baixa (green) -> Normal (green/yellow
+// blend) -> Alta (yellow) -> Urgente (yellow/red blend) -> Imediata (red).
+const PRIORITY_CLASS = {
+  Baixa: "priority-baixa",
+  Normal: "priority-normal",
+  Alta: "priority-alta",
+  Urgente: "priority-urgente",
+  Imediata: "priority-imediata",
+};
+
+export function priorityBadgeClass(priorityName) {
+  const key = PRIORITY_CLASS[priorityName];
+  return key ? `badge-${key}` : "";
+}
+
 export function formatDateTime(iso) {
   if (!iso) return "";
   const d = new Date(iso);

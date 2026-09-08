@@ -1,5 +1,5 @@
 import { REDMINE_BASE_URL } from "./config.js";
-import { escapeHtml, eventBadgeClass, eventLabel } from "./format.js";
+import { escapeHtml, eventBadgeClass, eventLabel, priorityBadgeClass } from "./format.js";
 
 // Shared between the dashboard (current week only) and the weeks overview
 // (any week) so both render issue lists the same way.
@@ -71,8 +71,13 @@ export function renderIssueItem({ row, baseline, eventsByType, isNew }) {
     ? `<span class="tag-sprint" title="Sprint desta demanda">${escapeHtml(row.sprint_cf_value)}</span>`
     : "";
 
+  const priorityTag = row.priority_name
+    ? `<span class="badge ${priorityBadgeClass(row.priority_name)}" title="Prioridade">${escapeHtml(row.priority_name)}</span>`
+    : "";
+
   return `
     <li class="issue-item">
+      ${priorityTag}
       ${sprintTag}
       <a href="${url}" target="_blank" rel="noopener">#${row.issue_id} ${escapeHtml(row.subject ?? "")}</a>
       <span class="status-name">${escapeHtml(row.status_name ?? "")}</span>

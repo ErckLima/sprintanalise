@@ -16,6 +16,14 @@
   --badge-completed: #2f6f8f;
   --badge-changed: #8a6d1f;
   --badge-reverted: #6a4fa0;
+
+  /* Priority gradient: baixa (green) -> normal (green/yellow) -> alta
+     (yellow) -> urgente (yellow/red) -> imediata (red). */
+  --priority-baixa: #2f8f5b;
+  --priority-normal: #7fa23f;
+  --priority-alta: #b8860b;
+  --priority-urgente: #c9702e;
+  --priority-imediata: #c23b3b;
 }
 
 * {
@@ -356,6 +364,21 @@ a:hover {
 }
 .badge-reverted-to-original {
   background: var(--badge-reverted);
+}
+.badge-priority-baixa {
+  background: var(--priority-baixa);
+}
+.badge-priority-normal {
+  background: var(--priority-normal);
+}
+.badge-priority-alta {
+  background: var(--priority-alta);
+}
+.badge-priority-urgente {
+  background: var(--priority-urgente);
+}
+.badge-priority-imediata {
+  background: var(--priority-imediata);
 }
 
 .tag-sprint {
