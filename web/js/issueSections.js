@@ -7,7 +7,14 @@ const PRIORITY_RANK = { Imediata: 0, Urgente: 1, Alta: 2, Normal: 3, Baixa: 4 };
 function priorityRank(name) {
   return PRIORITY_RANK[name] ?? 99;
 }
+function isRemoved(item) {
+  return item.eventsByType?.has("removed_from_sprint") ?? false;
+}
 function byPriority(a, b) {
+  // Removed-from-sprint demands always float to the top regardless of
+  // priority -- they need eyes on them before anything else.
+  const removedDiff = Number(isRemoved(b)) - Number(isRemoved(a));
+  if (removedDiff !== 0) return removedDiff;
   return priorityRank(a.row.priority_name) - priorityRank(b.row.priority_name);
 }
 
