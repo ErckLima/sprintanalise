@@ -2,6 +2,16 @@ import { supabase } from "./supabaseClient.js";
 import { escapeHtml } from "./format.js";
 import { groupIssuesForPerson, renderIssueSectionsHtml } from "./issueSections.js";
 
+// Same "hidden projects" preference as the dashboard, so a project hidden
+// there stays hidden here too.
+function getHiddenProjects() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("sprintanalise_hidden_projects") ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
 async function load() {
   const container = document.getElementById("weeks-list");
 
@@ -92,6 +102,8 @@ async function loadWeekDetail(week, peopleById, body) {
     return;
   }
 
+  const hiddenProjects = getHiddenProjects();
+
   body.innerHTML = personIds
     .map((personId) => {
       const person = peopleById.get(personId);
@@ -100,6 +112,7 @@ async function loadWeekDetail(week, peopleById, body) {
         currentStateByPerson,
         baselineByIssue,
         eventsByIssue,
+        hiddenProjects,
       );
       return `
         <article class="person-card">

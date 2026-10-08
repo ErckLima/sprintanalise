@@ -25,12 +25,13 @@ function byPriority(a, b) {
 // an issue can legitimately rack up more than one distinct event type in the
 // same week (e.g. added mid-week, then its status changed), and each one
 // needs its own badge rather than the newest event hiding the others.
-export function groupIssuesForPerson(personId, currentStateByPerson, baselineByIssue, eventsByIssue) {
+export function groupIssuesForPerson(personId, currentStateByPerson, baselineByIssue, eventsByIssue, hiddenProjects) {
   const rows = currentStateByPerson.get(personId) ?? [];
   const changed = [];
   const unchanged = [];
 
   for (const row of rows) {
+    if (hiddenProjects?.has(row.project_name)) continue;
     const baseline = baselineByIssue.get(row.issue_id);
     const eventsByType = eventsByIssue.get(row.issue_id);
     const isNew = !baseline;
@@ -95,9 +96,14 @@ export function renderIssueItem({ row, baseline, eventsByType, isNew }) {
     ? `<span class="badge ${priorityBadgeClass(row.priority_name)}" title="Prioridade">${escapeHtml(row.priority_name)}</span>`
     : "";
 
+  const projectTag = row.project_name
+    ? `<span class="tag-project" title="Projeto no Redmine">${escapeHtml(row.project_name)}</span>`
+    : "";
+
   return `
     <li class="issue-item">
       ${priorityTag}
+      ${projectTag}
       ${sprintTag}
       <a href="${url}" target="_blank" rel="noopener">#${row.issue_id} ${escapeHtml(row.subject ?? "")}</a>
       <span class="status-name">${escapeHtml(row.status_name ?? "")}</span>

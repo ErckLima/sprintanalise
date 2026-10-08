@@ -130,6 +130,9 @@ a:hover {
 
 .filter-bar {
   padding: 0.5rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .hidden-people-dropdown {
@@ -387,6 +390,14 @@ a:hover {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.05rem 0.4rem;
+}
+
+.tag-project {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0.05rem 0.4rem;
 }

@@ -82,6 +82,8 @@ Deno.serve(async (req) => {
           status_id: issue.status.id,
           status_name: issue.status.name,
           priority_name: issue.priority?.name ?? null,
+          project_id: issue.project?.id ?? null,
+          project_name: issue.project?.name ?? null,
           sprint_cf_value: cfValue,
           present_in_sprint: true,
           is_closed: isClosed,
@@ -132,6 +134,8 @@ Deno.serve(async (req) => {
         let isClosed = previous.is_closed;
         let cfValue = previous.sprint_cf_value;
         let priorityName = previous.priority_name;
+        let projectId = previous.project_id;
+        let projectName = previous.project_name;
         let eventType: string;
 
         if (fetched) {
@@ -140,6 +144,8 @@ Deno.serve(async (req) => {
           isClosed = statusMap.get(fetched.status.id)?.is_closed ?? false;
           cfValue = sprintCfValue(cfg, fetched);
           priorityName = fetched.priority?.name ?? null;
+          projectId = fetched.project?.id ?? null;
+          projectName = fetched.project?.name ?? null;
           eventType = isClosed ? "completed" : "removed_from_sprint";
         } else {
           eventType = "removed_from_sprint";
@@ -153,6 +159,8 @@ Deno.serve(async (req) => {
           status_id: statusId,
           status_name: statusName,
           priority_name: priorityName,
+          project_id: projectId,
+          project_name: projectName,
           sprint_cf_value: cfValue,
           present_in_sprint: false,
           is_closed: isClosed,

@@ -12,6 +12,7 @@ export interface RedmineIssue {
   subject: string;
   status: { id: number; name: string };
   priority?: { id: number; name: string };
+  project?: { id: number; name: string };
   assigned_to?: { id: number; name: string };
   custom_fields?: { id: number; name: string; value: unknown }[];
 }
