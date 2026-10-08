@@ -29,7 +29,7 @@ async function load() {
       .order("detected_at", { ascending: false }),
     supabase
       .from("issue_current_state")
-      .select("issue_id, subject, sprint_cf_value, priority_name, project_name, last_polled_at")
+      .select("issue_id, subject, sprint_cf_value, priority_name, last_polled_at")
       .eq("person_id", personId),
   ]);
 
@@ -54,9 +54,6 @@ async function load() {
     const priorityTag = state?.priority_name
       ? `<span class="badge ${priorityBadgeClass(state.priority_name)}" title="Prioridade">${escapeHtml(state.priority_name)}</span>`
       : "";
-    const projectTag = state?.project_name
-      ? `<span class="tag-project" title="Projeto no Redmine">${escapeHtml(state.project_name)}</span>`
-      : "";
     const transition = ev.from_status && ev.to_status
       ? `<span class="transition">${escapeHtml(ev.from_status)} → ${escapeHtml(ev.to_status)}</span>`
       : "";
@@ -65,7 +62,6 @@ async function load() {
     li.innerHTML = `
       <span class="timeline-date">${formatDateTime(ev.detected_at)}</span>
       ${priorityTag}
-      ${projectTag}
       ${sprintTag}
       <a href="${REDMINE_BASE_URL}/issues/${ev.issue_id}" target="_blank" rel="noopener">#${ev.issue_id} ${escapeHtml(subject)}</a>
       <span class="badge ${eventBadgeClass(ev.event_type)}">${escapeHtml(eventLabel(ev.event_type))}</span>

@@ -394,14 +394,6 @@ a:hover {
   padding: 0.05rem 0.4rem;
 }
 
-.tag-project {
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.05rem 0.4rem;
-}
-
 .tag-carryover {
   color: var(--text-muted);
   font-size: 0.72rem;

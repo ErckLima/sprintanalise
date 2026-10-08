@@ -4,36 +4,17 @@ import { groupIssuesForPerson, renderIssueSectionsHtml } from "./issueSections.j
 import { computeWeekLabel, generateWeekLabelOptions } from "./weekLabel.js";
 
 const HIDDEN_KEY = "sprintanalise_hidden_people";
-const HIDDEN_PROJECTS_KEY = "sprintanalise_hidden_projects";
 
-function getStoredSet(key) {
+function getHidden() {
   try {
-    return new Set(JSON.parse(localStorage.getItem(key) ?? "[]"));
+    return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]"));
   } catch {
     return new Set();
   }
 }
 
-function setStoredSet(key, set) {
-  localStorage.setItem(key, JSON.stringify(Array.from(set)));
-}
-
-function getHidden() {
-  return getStoredSet(HIDDEN_KEY);
-}
-
 function setHidden(set) {
-  setStoredSet(HIDDEN_KEY, set);
-}
-
-// New projects always start visible -- we store who's HIDDEN, not who's
-// shown, same reasoning as the people filter.
-function getHiddenProjects() {
-  return getStoredSet(HIDDEN_PROJECTS_KEY);
-}
-
-function setHiddenProjects(set) {
-  setStoredSet(HIDDEN_PROJECTS_KEY, set);
+  localStorage.setItem(HIDDEN_KEY, JSON.stringify(Array.from(set)));
 }
 
 let state = {
@@ -43,7 +24,6 @@ let state = {
   currentStateByPerson: new Map(),
   baselineByIssue: new Map(),
   eventsByIssue: new Map(),
-  knownProjects: new Set(),
 };
 
 async function loadData() {
@@ -61,14 +41,12 @@ async function loadData() {
   const currentStateByPerson = new Map();
   const baselineByIssue = new Map();
   const eventsByIssue = new Map();
-  const knownProjects = new Set();
 
   if (week) {
     const { data: currentStates } = await supabase.from("issue_current_state").select("*").eq("week_id", week.id);
     for (const row of currentStates ?? []) {
       if (!currentStateByPerson.has(row.person_id)) currentStateByPerson.set(row.person_id, []);
       currentStateByPerson.get(row.person_id).push(row);
-      if (row.project_name) knownProjects.add(row.project_name);
     }
 
     const { data: baselineRows } = await supabase.from("week_baseline_issues").select("*").eq("week_id", week.id);
@@ -90,14 +68,12 @@ async function loadData() {
     }
   }
 
-  state = { people: people ?? [], week, latestWeek, currentStateByPerson, baselineByIssue, eventsByIssue, knownProjects };
+  state = { people: people ?? [], week, latestWeek, currentStateByPerson, baselineByIssue, eventsByIssue };
 }
 
 function render() {
   const hidden = getHidden();
-  const hiddenProjects = getHiddenProjects();
   renderHiddenDropdown(hidden);
-  renderHiddenProjectsDropdown(hiddenProjects);
   renderWeekBanner();
 
   const deleteBtn = document.getElementById("delete-week-btn");
@@ -126,17 +102,16 @@ function render() {
 
   for (const person of visiblePeople) {
     const position = orderedAll.findIndex((p) => p.id === person.id) + 1;
-    container.appendChild(renderPersonCard(person, position, total, hiddenProjects));
+    container.appendChild(renderPersonCard(person, position, total));
   }
 }
 
-function renderPersonCard(person, position, total, hiddenProjects) {
+function renderPersonCard(person, position, total) {
   const { changed, unchanged } = groupIssuesForPerson(
     person.id,
     state.currentStateByPerson,
     state.baselineByIssue,
     state.eventsByIssue,
-    hiddenProjects,
   );
 
   const card = document.createElement("article");
@@ -177,23 +152,6 @@ function renderHiddenDropdown(hidden) {
     const label = document.createElement("label");
     label.className = "hidden-people-item";
     label.innerHTML = `<input type="checkbox" data-id="${person.id}" ${hidden.has(person.id) ? "" : "checked"}> ${escapeHtml(person.display_name)}`;
-    list.appendChild(label);
-  }
-}
-
-function renderHiddenProjectsDropdown(hiddenProjects) {
-  const list = document.getElementById("hidden-projects-list");
-  const summary = document.getElementById("hidden-projects-summary");
-  const projects = Array.from(state.knownProjects).sort((a, b) => a.localeCompare(b));
-  const total = projects.length;
-  const visible = projects.filter((name) => !hiddenProjects.has(name)).length;
-  summary.textContent = `Mostrar projetos (${visible}/${total})`;
-
-  list.innerHTML = "";
-  for (const name of projects) {
-    const label = document.createElement("label");
-    label.className = "hidden-people-item";
-    label.innerHTML = `<input type="checkbox" data-project="${escapeHtml(name)}" ${hiddenProjects.has(name) ? "" : "checked"}> ${escapeHtml(name)}`;
     list.appendChild(label);
   }
 }
@@ -329,19 +287,6 @@ function setupEvents() {
     if (e.target.checked) hidden.delete(id);
     else hidden.add(id);
     setHidden(hidden);
-    render();
-  });
-
-  document.getElementById("hidden-projects-toggle").addEventListener("click", () => {
-    document.getElementById("hidden-projects-panel").classList.toggle("open");
-  });
-
-  document.getElementById("hidden-projects-list").addEventListener("change", (e) => {
-    const name = e.target.dataset.project;
-    const hiddenProjects = getHiddenProjects();
-    if (e.target.checked) hiddenProjects.delete(name);
-    else hiddenProjects.add(name);
-    setHiddenProjects(hiddenProjects);
     render();
   });
 
