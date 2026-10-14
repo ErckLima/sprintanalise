@@ -57,6 +57,12 @@ function sprintFilterParams(cfg: RedmineConfig, assignedToId?: number): Record<s
   return params;
 }
 
+// Never shown even if Redmine's own status_id=o filter lets them through --
+// "Suspenso" is an *open* status here (is_closed=false), so it otherwise
+// sails right past that filter. The other three are already closed, but are
+// listed explicitly too so this doesn't silently depend on that staying true.
+const EXCLUDED_STATUS_NAMES = new Set(["Cancelada", "Suspenso", "Fechada", "Inválida"]);
+
 export async function fetchSprintIssues(
   cfg: RedmineConfig,
   currentWeekKey: number,
@@ -76,10 +82,13 @@ export async function fetchSprintIssues(
     total = data.total_count ?? issues.length;
     offset += limit;
   }
-  // The Redmine filter only checks the sprint field is non-empty -- the
-  // leader pre-fills future weeks too, so a demand only really counts once
-  // its own week is current or already past.
-  return issues.filter((issue) => isEligibleForCurrentSprint(sprintCfValue(cfg, issue), currentWeekKey));
+  return issues.filter((issue) =>
+    !EXCLUDED_STATUS_NAMES.has(issue.status.name) &&
+    // The Redmine filter only checks the sprint field is non-empty -- the
+    // leader pre-fills future weeks too, so a demand only really counts once
+    // its own week is current or already past.
+    isEligibleForCurrentSprint(sprintCfValue(cfg, issue), currentWeekKey)
+  );
 }
 
 export async function fetchIssuesForPeople(
